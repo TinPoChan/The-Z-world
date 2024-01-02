@@ -1,0 +1,4 @@
+repository "The Z-world@ericchantinpo@cloud"
+  path "/"
+    br "/main"
+    co "/main"
