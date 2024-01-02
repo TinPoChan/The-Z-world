@@ -14,6 +14,7 @@ public class Enemy : MonoBehaviour, IdamgeAble
 
     [SerializeField] int hp = 4;
     [SerializeField] int damge = 1;
+    [SerializeField] int exp = 400;
 
     private void Awake()
     {
@@ -59,6 +60,7 @@ public class Enemy : MonoBehaviour, IdamgeAble
 
         if (hp <= 0)
         {
+            targetGameObject.GetComponent<Level>().AddExp(exp);
             Destroy(gameObject);
         }
     }
