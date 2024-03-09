@@ -1,57 +1,90 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+// Ensures that a Rigidbody2D component is attached to the GameObject this script is attached to.
 [RequireComponent(typeof(Rigidbody2D))]
-
 public class PlayerMove : MonoBehaviour
 {
-    Rigidbody2D rgbd2d;
+    private CharacterStats characterStats;
 
-    [HideInInspector]
-    public Vector3 movementVector;
-    [HideInInspector]
+    private Rigidbody2D rb;
+    private Vector2 movementVector;
+    //private float speed = 10f; // Speed of the player
+    private float moveSpeed;
+
+    // Optional: Remove if not needed
     public float lastHorizontalVector;
-    [HideInInspector]
     public float lastVerticalVector;
 
-    Animate animate;
+    // Assuming 'Animate' is a custom script handling animations. Please adjust as per your actual implementation.
+    private Animate animate;
 
-    [SerializeField] float speed = 10f;
+    private void Start()
+    {
+        characterStats = GetComponent<CharacterStats>();
+        moveSpeed = characterStats.moveSpeed;
+    }
 
     private void Awake()
     {
-        rgbd2d = GetComponent<Rigidbody2D>();
-        movementVector = new Vector3();
+        rb = GetComponent<Rigidbody2D>();
         animate = GetComponent<Animate>();
-    }   
-    
+    }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        // Get the mouse position in screen space
-        Vector3 mousePosition = Input.mousePosition;
-        // Convert the mouse position to world space
-        Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(new Vector3(mousePosition.x, mousePosition.y, transform.position.z));
+        moveSpeed = characterStats.moveSpeed;
+        ProcessInputs();
+        Move();
+        UpdateAnimation();
+    }
 
-        if (movementVector.x != 0)
+    private void ProcessInputs()
+    {
+        // Convert mouse position to world space
+        Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+        // Calculate direction vector from player to mouse position
+        Vector2 direction = new Vector2(mousePosition.x - transform.position.x, mousePosition.y - transform.position.y);
+
+        float distanceToMouse = direction.magnitude;
+
+        // Threshold below which the character doesn't move or change direction
+        float movementThreshold = 1f; // Adjust this value as needed
+
+        if (distanceToMouse > movementThreshold)
         {
-            lastHorizontalVector = movementVector.x;
+            // Dynamic speed based on distance to mouse cursor
+            float speedMultiplier = Mathf.Clamp(distanceToMouse / 5f, 0.5f, 2f);
+
+            // Update movement vector with dynamic speed
+            movementVector = direction.normalized * moveSpeed * speedMultiplier;
         }
-        if (movementVector.y != 0)
+        else
         {
-            lastVerticalVector = movementVector.y;
+            // Close to cursor, reduce movement to avoid flickering
+            movementVector = Vector2.zero;
         }
 
-        animate.horizontal = worldMousePosition.x - transform.position.x;
+        // Store last non-zero movement vectors for animation purposes
+        if (movementVector.x != 0) lastHorizontalVector = movementVector.x;
+        if (movementVector.y != 0) lastVerticalVector = movementVector.y;
+    }
 
 
-        // Calculate the movement vector towards the mouse position
-        movementVector = worldMousePosition - transform.position;
-        movementVector.Normalize(); // Normalize to get a unit vector
-        movementVector *= speed; // Scale the vector by the desired speed
 
-        rgbd2d.velocity = movementVector;
+    private void Move()
+    {
+        // Apply movement vector to Rigidbody2D to move the player
+        rb.velocity = movementVector;
+    }
+
+    private void UpdateAnimation()
+    {
+        // Update animation component, assuming 'horizontal' represents animation direction
+        if (animate != null)
+        {
+            animate.horizontal = movementVector.x;
+            // Add more animation updates here if necessary
+        }
     }
 }
